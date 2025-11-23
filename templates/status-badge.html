@@ -1,0 +1,12 @@
+<script type="text/x-template" id="tpl-status">
+<span 
+    class="badge"
+    :class="statusClass"
+    @mouseover="showTooltip"
+    @mouseleave="hideTooltip">
+
+    {{ statusText }}
+
+    <div v-if="show" class="tooltip" v-html="tooltip"></div>
+</span>
+</script>

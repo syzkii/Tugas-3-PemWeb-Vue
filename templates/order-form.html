@@ -1,0 +1,17 @@
+<script type="text/x-template" id="tpl-order">
+<div>
+    <h2>Form Pemesanan</h2>
+
+    <div>
+        <label>Pilih Paket</label>
+        <select v-model="pilihan">
+            <option value="">-- pilih paket --</option>
+            <option v-for="p in paket" :value="p.kode">{{ p.kode }} - {{ p.nama }}</option>
+        </select>
+
+        <ul v-if="currentPaket">
+            <li v-for="kode in currentPaket.isi">{{ kode }}</li>
+        </ul>
+    </div>
+</div>
+</script>

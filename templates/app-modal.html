@@ -1,0 +1,17 @@
+<app-modal ref="modal">
+    <div @keyup.enter="handleKeyEnter">
+        <h3 class="text-xl font-semibold mb-3">{{ editIndex !== null ? 'Edit' : 'Tambah' }} Bahan Ajar</h3>
+        
+        <div class="space-y-2">
+            <input v-model="form.kode" placeholder="Kode" class="border p-2 w-full rounded">
+            <input v-model="form.judul" placeholder="Judul" class="border p-2 w-full rounded">
+            <input v-model="form.kategori" placeholder="Kategori" class="border p-2 w-full rounded">
+            <input v-model="form.upbjj" placeholder="UPBJJ" class="border p-2 w-full rounded">
+            <input v-model.number="form.harga" type="number" placeholder="Harga" class="border p-2 w-full rounded">
+            <input v-model.number="form.qty" type="number" placeholder="Qty" class="border p-2 w-full rounded">
+            <input v-model.number="form.safety" type="number" placeholder="Safety" class="border p-2 w-full rounded">
+        </div>
+
+        <button @click="saveForm" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded">Simpan</button>
+    </div>
+</app-modal>

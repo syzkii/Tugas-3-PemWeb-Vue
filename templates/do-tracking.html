@@ -1,0 +1,13 @@
+<script type="text/x-template" id="tpl-tracking">
+<div>
+    <h2>Tracking Delivery Order</h2>
+    
+    <input v-model="keyword" placeholder="Cari DO atau NIM" @keyup.enter="search">
+
+    <button @click="clear">Reset</button>
+
+    <div v-for="item in result">
+        <pre>{{ item }}</pre>
+    </div>
+</div>
+</script>

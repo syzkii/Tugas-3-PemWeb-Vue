@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Aplikasi Stok & Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        nav button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR PREMIUM -->
+        <aside class="w-64 bg-white shadow-xl p-6 flex flex-col border-r">
+
+            <h1 class="text-2xl font-bold text-blue-600 mb-6">📘 SITTA</h1>
+
+            <nav class="space-y-2">
+
+                <button @click="tab='stok'" class="flex items-center gap-3 px-4 py-3 w-full rounded-xl transition 
+                hover:bg-blue-50" :class="tab==='stok' ? 'bg-blue-600 text-white shadow' : 'text-gray-700'">
+                    📦 <span>Stok</span>
+                </button>
+
+                <button @click="tab='tracking'" class="flex items-center gap-3 px-4 py-3 w-full rounded-xl transition 
+                hover:bg-green-50" :class="tab==='tracking' ? 'bg-green-600 text-white shadow' : 'text-gray-700'">
+                    🚚 <span>Tracking DO</span>
+                </button>
+
+                <button @click="tab='order'" class="flex items-center gap-3 px-4 py-3 w-full rounded-xl transition 
+                hover:bg-indigo-50" :class="tab==='order' ? 'bg-indigo-600 text-white shadow' : 'text-gray-700'">
+                    📝 <span>Pemesanan</span>
+                </button>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- MAIN AREA -->
+        <main class="flex-1 p-10 overflow-y-auto">
+
+            <!-- HEADER DINAMIS -->
+            <header class="mb-8">
+                <h2 class="text-4xl font-bold text-gray-700" v-text="pageTitle"></h2>
+                <p class="text-gray-500">Dashboard SITTA — Bahan Ajar Universitas Terbuka</p>
+            </header>
+
+
+
+            <!-- CONTENT -->
+            <section v-show="tab==='stok'">
+                <ba-stock-table :items="state.stok"></ba-stock-table>
+            </section>
+
+            <section v-show="tab==='tracking'">
+                <do-tracking :data="state.tracking"></do-tracking>
+            </section>
+
+            <section v-show="tab==='order'">
+                <order-form :paket="state.paket" :ekspedisi="state.pengirimanList" @created="handleNewDO"></order-form>
+            </section>
+
+            <app-modal ref="modal"></app-modal>
+
+        </main>
+
+    </div>
+    <!-- ==================== TEMPLATE COMPONENTS ==================== -->
+
+    <!-- Stok -->
+    <template id="tpl-stock">
+        <div class="p-6">
+            <h2 class="text-2xl font-semibold mb-4">Data Stok</h2>
+
+            <!-- FORM CREATE / UPDATE -->
+            <div class="mb-4 p-4 bg-gray-50 rounded shadow">
+                <h3 class="font-semibold mb-2">{{ editIndex === -1 ? 'Tambah' : 'Edit' }} Bahan Ajar</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <input v-model="form.kode" ref="kodeInput" placeholder="Kode Mata Kuliah" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input v-model="form.judul" placeholder="Judul Mata Kuliah" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input v-model="form.kategori" placeholder="Kategori" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input v-model="form.upbjj" placeholder="UPBJJ" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input v-model="form.lokasiRak" placeholder="Lokasi Rak" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input type="number" v-model.number="form.harga" placeholder="Harga" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input type="number" v-model.number="form.qty" placeholder="Stok" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                    <input type="number" v-model.number="form.safety" placeholder="Safety Stock" @keyup.enter="saveItem"
+                        class="border p-2 rounded" />
+                </div>
+                <div class="mt-2 flex gap-2">
+                    <button @click="saveItem" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        {{ editIndex === -1 ? 'Tambah' : 'Update' }}
+                    </button>
+                    <button @click="resetForm" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Reset</button>
+                </div>
+            </div>
+
+
+            <!-- ================= FILTER ================= -->
+            <div class="mb-4 flex gap-4 items-center">
+                <!-- Filter UT-daerah -->
+                <select v-model="filterUPBJJ" class="border p-2 rounded">
+                    <option value="">Semua UT Daerah</option>
+                    <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+                </select>
+
+                <!-- Filter Kategori (dependent) -->
+                <select v-if="filterUPBJJ" v-model="filterKategori" class="border p-2 rounded">
+                    <option value="">Semua Kategori</option>
+                    <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
+                </select>
+
+                <!-- Filter stok rendah/kosong -->
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" v-model="showLowStock">
+                    Tampilkan stok rendah/kosong
+                </label>
+
+                <!-- Reset filter -->
+                <button @click="resetFilters" class="px-3 py-1 bg-gray-200 rounded">Reset</button>
+            </div>
+
+            <!-- ================= TABLE ================= -->
+            <table class="min-w-full bg-white shadow rounded-lg overflow-hidden">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="p-3 text-left cursor-pointer" @click="sortBy('judul')">Judul</th>
+                        <th class="p-3 text-left">Kategori</th>
+                        <th class="p-3 text-left">UPBJJ</th>
+                        <th class="p-3 text-left">Harga</th>
+                        <th class="p-3 text-left">Qty</th>
+                        <th class="p-3 text-left">Safety</th>
+                        <th class="p-3 text-left">Status</th>
+                        <th class="p-3 text-left">Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr v-for="(item, index) in filtered" :key="item.kode" class="border-b hover:bg-gray-50">
+                        <td class="p-3">{{ item.kode }} - {{ item.judul }}</td>
+                        <td class="p-3">{{ item.kategori }}</td>
+                        <td class="p-3">{{ item.upbjj }}</td>
+                        <td class="p-3">{{ formatRupiah(item.harga) }}</td>
+                        <td class="p-3">{{ item.qty }} buah</td>
+                        <td class="p-3">{{ item.safety }} buah</td>
+                        <td class="p-3">
+                            <status-badge :qty="item.qty" :safety="item.safety"
+                                :title="tooltipContent(item)"></status-badge>
+                        </td>
+                        <td>
+                            <button @click="editItem(index)" class="px-2 py-1 bg-yellow-300 rounded">Edit</button>
+                            <button @click="deleteItem(index)"
+                                class="px-2 py-1 bg-red-400 rounded text-white">Hapus</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+
+
+    <!-- Tracking -->
+    <template id="tpl-tracking">
+        <div class="p-4">
+
+            <h2 class="text-xl font-semibold mb-4">Tracking DO</h2>
+
+            <input v-model="keyword" @keyup.enter="search" @keyup.esc="reset" type="text"
+                placeholder="Cari Nomor DO atau NIM..." class="border p-2 rounded w-full mb-4 shadow">
+
+            <button @click="reset" class="px-3 py-2 bg-gray-200 rounded">Clear</button>
+
+            <div v-if="result.length" class="mt-4 space-y-4">
+
+                <div class="p-4 bg-white rounded shadow" v-for="(row, index) in result" :key="index">
+
+                    <strong>Nomor DO:</strong> {{ row.do }} <br>
+                    <strong>NIM:</strong> {{ row.nim }} <br>
+                    <strong>Nama:</strong> {{ row.nama }} <br>
+                    <strong>Ekspedisi:</strong> {{ row.ekspedisi }} <br>
+                    <strong>Paket:</strong> {{ row.paket.nama }} <br>
+                    <strong>Tgl Kirim:</strong> {{ row.tanggal }} <br>
+
+                    <h4 class="mt-2 font-semibold">Status Perjalanan:</h4>
+                    <ul class="list-disc pl-5">
+                        <li v-for="(st, i) in row.status" :key="i">
+                            {{ st.waktu }} — {{ st.keterangan }}
+                        </li>
+                    </ul>
+
+                    <input v-model="row.tempKet" placeholder="Tambah keterangan status"
+                        class="border p-2 w-full rounded mt-2">
+
+                    <button @click="addStatus(row)" class="px-3 py-2 bg-blue-600 text-white rounded mt-2">Tambah
+                        Status</button>
+
+                </div>
+            </div>
+
+            <div v-else-if="keyword" class="mt-4 text-gray-500">
+                <em>Tidak ada hasil.</em>
+            </div>
+
+        </div>
+    </template>
+
+
+
+    <!-- Order -->
+    <template id="tpl-order">
+        <div class="p-6">
+            <h2 class="text-2xl font-semibold mb-4">Form Pemesanan</h2>
+
+            <div class="space-y-4">
+
+                <div>
+                    <label class="font-semibold">NIM</label>
+                    <input v-model="nim" class="border p-3 w-full rounded-lg shadow-sm">
+                </div>
+
+                <div>
+                    <label class="font-semibold">Nama</label>
+                    <input v-model="nama" class="border p-3 w-full rounded-lg shadow-sm">
+                </div>
+
+                <div>
+                    <label class="font-semibold">Paket</label>
+                    <select v-model="kodePaket" class="border p-3 w-full rounded-lg shadow-sm">
+                        <option value="">-- pilih paket --</option>
+                        <option v-for="p in paket" :value="p.kode">
+                            {{ p.kode }} - {{ p.nama }}
+                        </option>
+                    </select>
+
+                    <ul class="pl-4 mt-2 list-disc text-gray-600" v-if="selectedPaket">
+                        <li v-for="i in selectedPaket.isi">{{ i }}</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <label class="font-semibold">Ekspedisi</label>
+                    <select v-model="eksp" class="border p-3 w-full rounded-lg shadow-sm">
+                        <option value="">-- pilih ekspedisi --</option>
+                        <option v-for="e in ekspedisi" :value="e.kode">
+                            {{ e.nama }}
+                        </option>
+                    </select>
+                </div>
+
+                <button @click="submit" class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full">
+                    Simpan Pesanan
+                </button>
+
+            </div>
+        </div>
+    </template>
+
+
+
+    <!-- Badge -->
+    <template id="tpl-badge">
+        <span class="px-3 py-1 text-sm font-semibold rounded-full" :class="{
+            'bg-green-200 text-green-800': label==='Aman',
+            'bg-yellow-200 text-yellow-800': label==='Menipis',
+            'bg-red-200 text-red-800': label==='Kosong'
+        }">
+            {{ label }}
+        </span>
+    </template>
+
+
+    <!-- Modal -->
+    <template id="tpl-modal">
+        <div v-if="show" class="p-6 bg-white rounded shadow-xl border">
+            <slot></slot>
+            <button @click="close" class="px-3 py-2 bg-gray-300 rounded mt-3">Tutup</button>
+        </div>
+    </template>
+
+</body>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+<script src="/js/services/api.js"></script>
+
+<script src="/js/components/stock-table.js"></script>
+<script src="/js/components/do-tracking.js"></script>
+<script src="/js/components/order-form.js"></script>
+<script src="/js/components/status-badge.js"></script>
+<script src="/js/components/app-modal.js"></script>
+
+<script src="/js/app.js"></script>
+
+</html>

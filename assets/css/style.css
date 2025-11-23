@@ -1,0 +1,15 @@
+/* Gaya minimal agar rapi saat demo */
+body{font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; padding:0; background:#f6f8fa}
+.app-header{background:#0b5cff;color:#fff;padding:18px}
+.app-header h1{margin:0;font-size:20px}
+.container{max-width:980px;margin:18px auto;padding:12px}
+.stock-table{background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:8px;border-bottom:1px solid #eee}
+.form-row{display:flex;gap:8px;align-items:center}
+.button{padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
+.button.primary{background:#0b5cff;color:#fff}
+.app-footer{text-align:center;padding:12px;color:#666}
+.badge{padding:4px 8px;border-radius:4px;font-weight:600}
+.modal{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+.modal .panel{background:#fff;padding:16px;border-radius:8px;min-width:320px}
