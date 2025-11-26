@@ -27,7 +27,13 @@ new Vue({
 
     methods: {
         handleNewDO(newDO) {
-            console.log("Data DO baru diterima:", newDO);
+            // Tambahkan ke tracking
+            this.state.tracking.push(newDO);
+
+            // Simpan kembali
+            ApiService.saveData(this.state);
+
+            console.log("Data DO baru ditambahkan:", newDO);
         }
     }
 });

@@ -179,48 +179,48 @@
 
     <!-- Tracking -->
     <template id="tpl-tracking">
-        <div class="p-4">
+        <div class="p-6">
+            <h2 class="text-2xl font-semibold mb-4">Tracking Delivery Order</h2>
 
-            <h2 class="text-xl font-semibold mb-4">Tracking DO</h2>
 
             <input v-model="keyword" @keyup.enter="search" @keyup.esc="reset" type="text"
-                placeholder="Cari Nomor DO atau NIM..." class="border p-2 rounded w-full mb-4 shadow">
+                placeholder="Cari Nomor DO atau NIM…" class="border p-3 w-full rounded shadow mb-3" />
+            <button @click="reset" class="px-4 py-2 bg-gray-200 rounded-lg shadow">Clear</button>
 
-            <button @click="reset" class="px-3 py-2 bg-gray-200 rounded">Clear</button>
 
-            <div v-if="result.length" class="mt-4 space-y-4">
+            <div v-if="result.length" class="mt-6 space-y-5">
+                <div v-for="row in result" class="bg-white p-5 rounded-lg shadow">
+                    <p><strong>Nomor DO:</strong> {{ row.do }}</p>
+                    <p><strong>NIM:</strong> {{ row.nim }}</p>
+                    <p><strong>Nama:</strong> {{ row.nama }}</p>
+                    <p><strong>Ekspedisi:</strong> {{ row.ekspedisi }}</p>
+                    <p><strong>Paket:</strong> {{ row.paket.nama }}</p>
+                    <p><strong>Tgl Kirim:</strong> {{ row.tanggal }}</p>
+                    <p><strong>Total Harga:</strong> {{ formatRupiah(row.total) }}</p>
 
-                <div class="p-4 bg-white rounded shadow" v-for="(row, index) in result" :key="index">
 
-                    <strong>Nomor DO:</strong> {{ row.do }} <br>
-                    <strong>NIM:</strong> {{ row.nim }} <br>
-                    <strong>Nama:</strong> {{ row.nama }} <br>
-                    <strong>Ekspedisi:</strong> {{ row.ekspedisi }} <br>
-                    <strong>Paket:</strong> {{ row.paket.nama }} <br>
-                    <strong>Tgl Kirim:</strong> {{ row.tanggal }} <br>
-
-                    <h4 class="mt-2 font-semibold">Status Perjalanan:</h4>
-                    <ul class="list-disc pl-5">
-                        <li v-for="(st, i) in row.status" :key="i">
-                            {{ st.waktu }} — {{ st.keterangan }}
-                        </li>
+                    <h3 class="mt-3 font-semibold">Status Perjalanan:</h3>
+                    <ul class="list-disc pl-6 text-gray-700">
+                        <li v-for="s in row.status">{{ s.waktu }} — {{ s.keterangan }}</li>
                     </ul>
 
-                    <input v-model="row.tempKet" placeholder="Tambah keterangan status"
-                        class="border p-2 w-full rounded mt-2">
 
-                    <button @click="addStatus(row)" class="px-3 py-2 bg-blue-600 text-white rounded mt-2">Tambah
+                    <input v-model="row.tempKet" placeholder="Tambah status perjalanan"
+                        class="border p-2 w-full mt-2 rounded" />
+                    <button @click="addStatus(row)" class="bg-blue-600 text-white px-3 py-2 rounded mt-2">Tambah
                         Status</button>
-
                 </div>
             </div>
 
-            <div v-else-if="keyword" class="mt-4 text-gray-500">
-                <em>Tidak ada hasil.</em>
-            </div>
 
+            <div v-else-if="keyword" class="text-gray-500 mt-4"><em>Tidak ada hasil ditemukan…</em></div>
+
+
+            <!-- ================= FORM INPUT DO BARU (DIPINDAH KE PEMESANAN) ================= -->
         </div>
     </template>
+
+
 
 
 
@@ -229,44 +229,59 @@
         <div class="p-6">
             <h2 class="text-2xl font-semibold mb-4">Form Pemesanan</h2>
 
-            <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4 bg-white p-6 rounded shadow">
+
+                <div>
+                    <label class="font-semibold">Nomor DO (Auto)</label>
+                    <input :value="generatedDO" disabled class="p-3 border rounded w-full bg-gray-200">
+                </div>
+
+                <div>
+                    <label class="font-semibold">Tanggal Kirim</label>
+                    <input v-model="tanggal" type="date" class="p-3 border rounded w-full">
+                </div>
 
                 <div>
                     <label class="font-semibold">NIM</label>
-                    <input v-model="nim" class="border p-3 w-full rounded-lg shadow-sm">
+                    <input v-model="nim" class="p-3 border rounded w-full">
                 </div>
 
                 <div>
                     <label class="font-semibold">Nama</label>
-                    <input v-model="nama" class="border p-3 w-full rounded-lg shadow-sm">
+                    <input v-model="nama" class="p-3 border rounded w-full">
                 </div>
 
-                <div>
-                    <label class="font-semibold">Paket</label>
-                    <select v-model="kodePaket" class="border p-3 w-full rounded-lg shadow-sm">
+                <div class="col-span-2">
+                    <label class="font-semibold">Ekspedisi</label>
+                    <select v-model="selectedEkspedisi" class="p-3 border rounded w-full">
+                        <option value="">-- pilih --</option>
+                        <option>JNE Regular</option>
+                        <option>JNE Express</option>
+                    </select>
+                </div>
+
+
+                <div class="col-span-2">
+                    <label class="font-semibold">Paket Bahan Ajar</label>
+                    <select v-model="kodePaket" class="p-3 border rounded w-full">
                         <option value="">-- pilih paket --</option>
-                        <option v-for="p in paket" :value="p.kode">
-                            {{ p.kode }} - {{ p.nama }}
-                        </option>
+                        <option v-for="p in paket" :value="p.kode">{{ p.kode }} - {{ p.nama }}</option>
                     </select>
 
-                    <ul class="pl-4 mt-2 list-disc text-gray-600" v-if="selectedPaket">
+                    <ul class="mt-2 pl-6 list-disc text-gray-700" v-if="selectedPaket">
                         <li v-for="i in selectedPaket.isi">{{ i }}</li>
                     </ul>
                 </div>
 
                 <div>
-                    <label class="font-semibold">Ekspedisi</label>
-                    <select v-model="eksp" class="border p-3 w-full rounded-lg shadow-sm">
-                        <option value="">-- pilih ekspedisi --</option>
-                        <option v-for="e in ekspedisi" :value="e.kode">
-                            {{ e.nama }}
-                        </option>
-                    </select>
+                    <label class="font-semibold">Total Harga</label>
+                    <input :value="selectedPaket ? formatRupiah(selectedPaket.harga) : ''" disabled
+                        class="p-3 border rounded w-full bg-gray-200">
                 </div>
 
-                <button @click="submit" class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full">
-                    Simpan Pesanan
+                <!-- IMPORTANT: ganti simpanDO -> submit (method ada di JS) -->
+                <button @click="submit" class="col-span-2 bg-green-600 text-white px-5 py-3 rounded w-full mt-4">
+                    Simpan Delivery Order
                 </button>
 
             </div>
