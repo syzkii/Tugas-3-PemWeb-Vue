@@ -76,7 +76,7 @@ Vue.component('order-form', {
 
       const next = seqArr.length ? Math.max(...seqArr) + 1 : 1;
 
-      return `${prefix}-${String(next).padStart(3, "0")}`;
+      return `${prefix}-${String(next).padStart(4, "0")}`;
     },
 
     formatDate(dateInput) {
